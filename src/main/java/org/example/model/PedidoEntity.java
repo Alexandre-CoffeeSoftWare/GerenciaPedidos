@@ -9,15 +9,9 @@ import lombok.Data;
 public class PedidoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false)
     private Long id;
 
-    @Column(name = "nome_produto", nullable = false)
-    private String nomeProduto;
-
-    @Column(name = "quantidade", nullable = false)
-    private Integer quantidade;
-
-    @Column(name = "valor", nullable = false)
-    private Float valor;
+    @Column(name = "total", nullable = false)
+    private Float total;
 }

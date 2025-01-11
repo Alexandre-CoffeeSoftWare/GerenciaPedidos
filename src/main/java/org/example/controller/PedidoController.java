@@ -27,12 +27,12 @@ public class PedidoController implements PedidoApi {
 
     @Override
     public PedidoEntity inserir(PedidoDTO pedidoDTO) {
-        return pedidoService.createPedido(pedidoDTO);
+        return pedidoService.inserir(pedidoDTO);
     }
 
     @Override
     public PedidoEntity alterar(Long id, PedidoDTO pedidoDTO) {
-        return pedidoService.updatePedido(id, pedidoDTO);
+        return pedidoService.alterar(id, pedidoDTO);
     }
 
     @Override

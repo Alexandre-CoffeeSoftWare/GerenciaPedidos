@@ -21,6 +21,8 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final PedidoMapper pedidoMapper;
     private final Cache<Long, PedidoEntity> pedidoCache;
+    private final ItensService itensService;
+    private final RabbitMQService rabbitMQService;
 
     @GetMapping
     public List<PedidoEntity> getAllPedidos() {
@@ -51,19 +53,46 @@ public class PedidoService {
             return null;
     }
 
-    public PedidoEntity createPedido(PedidoDTO pedidoDTO) {
+    public PedidoEntity inserir(PedidoDTO pedidoDTO) {
+
+        if (pedidoCache.asMap().containsKey(pedidoDTO.getId())) {
+            rabbitMQService.enviarMensagemParaFila("pedido-duplicado", pedidoDTO, "Pedido duplicado detectado no cache.");
+            return null;
+        }
+
         PedidoEntity pedidoEntity = pedidoMapper.dtoToEntity(pedidoDTO);
-        PedidoEntity savedPedido = pedidoRepository.save(pedidoEntity);
-        pedidoCache.put(savedPedido.getId(), savedPedido);
-        return savedPedido;
+
+        Float total = itensService.calcularTotalPedido(pedidoDTO.getItens());
+        pedidoEntity.setTotal(total);
+
+        try {
+
+            PedidoEntity savedPedido = pedidoRepository.save(pedidoEntity);
+            pedidoCache.put(savedPedido.getId(), savedPedido);
+
+            itensService.inserir(pedidoDTO.getItens(), savedPedido);
+
+            return savedPedido;
+        } catch (Exception e) {
+
+            rabbitMQService.enviarMensagemParaFila("pedido.erro", pedidoDTO, "Erro ao salvar o pedido: " + e.getMessage());
+            return null;
+        }
     }
 
-    public PedidoEntity updatePedido(Long id, PedidoDTO pedidoDTO) {
+    public PedidoEntity alterar(Long id, PedidoDTO pedidoDTO) {
         PedidoEntity pedidoEntity = pedidoMapper.dtoToEntity(pedidoDTO);
         pedidoEntity.setId(id);
-        PedidoEntity updatedPedido = pedidoRepository.save(pedidoEntity);
-        pedidoCache.put(id, updatedPedido);
-        return updatedPedido;
+
+        Float total = itensService.calcularTotalPedido(pedidoDTO.getItens());
+        pedidoEntity.setTotal(total);
+
+        PedidoEntity savedPedido = pedidoRepository.save(pedidoEntity);
+        pedidoCache.put(id, savedPedido);
+
+        itensService.alterar(pedidoDTO.getItens(), savedPedido);
+
+        return savedPedido;
     }
 
     public Void deletePedido(Long id) {
