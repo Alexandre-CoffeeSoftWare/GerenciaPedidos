@@ -9,12 +9,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import org.example.service.RegisterUriService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RateLimitingFilter implements Filter {
 
     private static final RateLimiter rateLimiter = new RateLimiter(100,60000);
+    private static final RegisterUriService registerUriService = RegisterUriService.getInstance();
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -24,7 +26,9 @@ public class RateLimitingFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String clientIP = httpRequest.getRemoteAddr();
-        if (!rateLimiter.checkRateLimit(clientIP)) {
+        String requestURI = httpRequest.getRequestURI();
+
+        if ((!registerUriService.repeatedRequest(requestURI, clientIP)) && (!rateLimiter.checkRateLimit(clientIP))) {
             httpResponse.setStatus(429); // Too Many Requests
             httpResponse.getWriter().write("Limite de pedidos excedido, tente mais tarde!");
             return;

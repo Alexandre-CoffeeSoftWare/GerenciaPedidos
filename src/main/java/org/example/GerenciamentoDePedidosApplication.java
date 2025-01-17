@@ -7,7 +7,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = "org.example")
-@EntityScan(basePackages = "org.example.model")
+@EntityScan(basePackages = {"org.example.config", "org.example.model"})
 @EnableJpaRepositories(basePackages = "org.example.repository")
 @EnableCaching
 public class GerenciamentoDePedidosApplication {
